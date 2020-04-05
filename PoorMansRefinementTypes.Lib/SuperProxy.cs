@@ -63,6 +63,15 @@ namespace PoorMansRefinementTypes.Lib
                             {
                                 throw new MissingMethodException($"Cannot find default generator method {ensure.GetDefault} for attribute {ensure.GetType().Name} in for member {caller.Name} in class {caller.DeclaringType.Name}.");
                             }
+
+                            if (callingObject != null)
+                            {
+                                if (defaultGenerator.GetParameters().Length > 1 && args.Length==1)
+                                {
+                                    args = new object[] { a, callingObject };
+                                }
+                            }
+
                             return (T)defaultGenerator.Invoke(null, args); 
                         }
                         else
