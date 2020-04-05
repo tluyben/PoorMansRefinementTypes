@@ -16,7 +16,16 @@ namespace PoorMansRefinementTypes.Tests
         }
 
         [Ensures(ValidationMethod = nameof(IsOfAdultAge), Throw = false, GetDefault = nameof(ErrorAge))]
-        public override int Age { get; set; }
-
+        public override int Age
+        {
+            get
+            {
+                return age;
+            }
+            set
+            {
+                age = SuperProxy.Validate(value);
+            }
+        }
     }
 }
