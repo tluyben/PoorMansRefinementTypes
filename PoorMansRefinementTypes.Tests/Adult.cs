@@ -12,7 +12,7 @@ namespace PoorMansRefinementTypes.Tests
 
         public static bool IsOfAdultAge(int a)
         {
-            return a < 18;
+            return a >= 18;
         }
 
         [Ensures(ValidationMethod = nameof(IsOfAdultAge), Throw = false, GetDefault = nameof(ErrorAge))]
