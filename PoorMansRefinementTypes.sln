@@ -1,0 +1,23 @@
+
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio 15
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoorMansRefinementTypes.Lib", "PoorMansRefinementTypes.Lib\PoorMansRefinementTypes.Lib.csproj", "{65A2219A-87A1-43E9-BC12-7B91DBDA56B2}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PoorMansRefinementTypes.Tests", "PoorMansRefinementTypes.Tests\PoorMansRefinementTypes.Tests.csproj", "{C9FBE464-5E1E-4018-B60C-695DE6EE6377}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{65A2219A-87A1-43E9-BC12-7B91DBDA56B2}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{65A2219A-87A1-43E9-BC12-7B91DBDA56B2}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{65A2219A-87A1-43E9-BC12-7B91DBDA56B2}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{65A2219A-87A1-43E9-BC12-7B91DBDA56B2}.Release|Any CPU.Build.0 = Release|Any CPU
+		{C9FBE464-5E1E-4018-B60C-695DE6EE6377}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{C9FBE464-5E1E-4018-B60C-695DE6EE6377}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{C9FBE464-5E1E-4018-B60C-695DE6EE6377}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{C9FBE464-5E1E-4018-B60C-695DE6EE6377}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal
