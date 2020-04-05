@@ -7,7 +7,7 @@ namespace PoorMansRefinementTypes.Lib
     public class SuperProxy
     {
 
-        public static MemberInfo GetCallingMethodInfo()
+        protected static MemberInfo GetCallingMethodInfo()
         {
             var frames = new StackTrace(); 
             var method = frames.GetFrame(2).GetMethod();
@@ -23,7 +23,7 @@ namespace PoorMansRefinementTypes.Lib
             return realMember; 
         }
 
-        public static T HandleEnsureAttribute<T>(MemberInfo caller, T a)
+        protected static T HandleEnsureAttribute<T>(MemberInfo caller, T a)
         {
             foreach (EnsuresAttribute ensure in caller.GetCustomAttributes<EnsuresAttribute>())
             {
