@@ -63,5 +63,36 @@ namespace PoorMansRefinementTypes.Tests
             }
 
         }
+
+
+        [Test]
+        public void ChildTest5()
+        {
+            Child child = new Child();
+            child.Age = 5;
+
+            Assert.True(child.Age == 5);
+
+            child.CanGetMortgage = true;
+
+            Assert.False(child.CanGetMortgage); 
+            
+
+        }
+
+        [Test]
+        public void AdultTest1()
+        {
+            Adult adult = new Adult();
+            adult.Age = 19;
+
+            Assert.True(adult.Age == 19);
+
+            adult.CanGetMortgage = true;
+
+            Assert.True(adult.CanGetMortgage);
+
+
+        }
     }
 }

@@ -9,7 +9,7 @@ namespace PoorMansRefinementTypes.Lib
 
         protected static MemberInfo GetCallingMethodInfo()
         {
-            var frames = new StackTrace(); 
+            var frames = new StackTrace();
             var method = frames.GetFrame(2).GetMethod();
 
             MemberInfo realMember = (MemberInfo)method;
@@ -23,17 +23,30 @@ namespace PoorMansRefinementTypes.Lib
             return realMember; 
         }
 
-        protected static T HandleEnsureAttribute<T>(MemberInfo caller, T a)
+        protected static T HandleEnsureAttribute<T>(MemberInfo caller, T a, object callingObject = null)
         {
             foreach (EnsuresAttribute ensure in caller.GetCustomAttributes<EnsuresAttribute>())
             {
+                
                 var validator = caller.DeclaringType.GetMethod(ensure.ValidationMethod, BindingFlags.Static|BindingFlags.Public);
                 if (validator == null)
                 {
                     throw new MissingMethodException($"Cannot find validation method {ensure.ValidationMethod} for attribute {ensure.GetType().Name} in for member {caller.Name} in class {caller.DeclaringType.Name}.");
                 }
 
-                var res = (bool)validator.Invoke(null, new object[] { a });
+                // default args
+                var args = new object[] { a };
+
+                // if we have a calling object, let's see if we should pass it; 
+                if (callingObject!=null)
+                {
+                    if (validator.GetParameters().Length > 1)
+                    {
+                        args = new object[] { a, callingObject }; 
+                    }
+                }
+
+                var res = (bool)validator.Invoke(null, args);
 
                 if (!res)
                 {
@@ -50,7 +63,7 @@ namespace PoorMansRefinementTypes.Lib
                             {
                                 throw new MissingMethodException($"Cannot find default generator method {ensure.GetDefault} for attribute {ensure.GetType().Name} in for member {caller.Name} in class {caller.DeclaringType.Name}.");
                             }
-                            return (T)defaultGenerator.Invoke(null, new object[] { a }); 
+                            return (T)defaultGenerator.Invoke(null, args); 
                         }
                         else
                         {
@@ -64,19 +77,34 @@ namespace PoorMansRefinementTypes.Lib
             return a; 
         }
 
-        public static int Validate(int a)
+        public static int Validate(int a, object o = null)
         {
-            return HandleEnsureAttribute<int>(GetCallingMethodInfo(), a); 
+            return HandleEnsureAttribute<int>(GetCallingMethodInfo(), a, o); 
         }
 
-        public static string Validate(string s)
+        public static string Validate(string s, object o = null)
         {
-            return HandleEnsureAttribute<string>(GetCallingMethodInfo(), s);
+            return HandleEnsureAttribute<string>(GetCallingMethodInfo(), s, o);
         }
 
-        public static double Validate(double d)
+        public static double Validate(double d, object o = null)
         {
-            return HandleEnsureAttribute<double>(GetCallingMethodInfo(), d);
+            return HandleEnsureAttribute<double>(GetCallingMethodInfo(), d, o);
+        }
+
+        public static float Validate(float f, object o = null)
+        {
+            return HandleEnsureAttribute<float>(GetCallingMethodInfo(), f, o);
+        }
+
+        public static DateTime Validate(DateTime dt, object o = null)
+        {
+            return HandleEnsureAttribute<DateTime>(GetCallingMethodInfo(), dt, o);
+        }
+
+        public static bool Validate(bool b, object o = null)
+        {
+            return HandleEnsureAttribute<bool>(GetCallingMethodInfo(), b, o);
         }
     }
 }
