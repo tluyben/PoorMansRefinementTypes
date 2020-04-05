@@ -1,16 +1,21 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Reflection;
+using System.Linq;
 
 namespace PoorMansRefinementTypes.Lib
 {
     public class SuperProxy
     {
+        // NOT THREAD SAFE (obviously) 
+        private Dictionary<string, object> parameters = new Dictionary<string, object>();
 
-        protected static MemberInfo GetCallingMethodInfo()
+
+        private static MemberInfo GetCallingMethodInfo(int si = 0)
         {
             var frames = new StackTrace();
-            var method = frames.GetFrame(2).GetMethod();
+            var method = frames.GetFrame(2+si).GetMethod();
 
             MemberInfo realMember = (MemberInfo)method;
 
@@ -23,10 +28,15 @@ namespace PoorMansRefinementTypes.Lib
             return realMember; 
         }
 
-        protected static T HandleEnsureAttribute<T>(MemberInfo caller, T a, object callingObject = null)
+        protected static T HandleEnsureAttribute<T>(MemberInfo caller, T a, object callingObject = null, string name = null)
         {
             foreach (EnsuresAttribute ensure in caller.GetCustomAttributes<EnsuresAttribute>())
             {
+
+                if (ensure.ParameterName!=null && !(callingObject is SuperProxy))
+                {
+                    throw new InvalidProxyException($"Trying to assign a method parameter with name {ensure.ParameterName} from a class that does not inherit from {nameof(SuperProxy)}"); 
+                }
                 
                 var validator = caller.DeclaringType.GetMethod(ensure.ValidationMethod, BindingFlags.Static|BindingFlags.Public);
                 if (validator == null)
@@ -50,9 +60,11 @@ namespace PoorMansRefinementTypes.Lib
 
                 if (!res)
                 {
+                    var param = ensure.ParameterName != null ? $", parameter {ensure.ParameterName}," : "";
+
                     if (ensure.Throw)
                     {
-                        throw new InvalidValueException($"Value {a} is not a valid value for member {caller.Name} according to {ensure.GetType().Name} in class {caller.DeclaringType.Name}"); 
+                        throw new InvalidValueException($"Value {a} is not a valid value for member {caller.Name}{param} according to {ensure.GetType().Name} in class {caller.DeclaringType.Name}"); 
                     }
                     else
                     {
@@ -61,7 +73,7 @@ namespace PoorMansRefinementTypes.Lib
                             var defaultGenerator = caller.DeclaringType.GetMethod(ensure.GetDefault, BindingFlags.Static | BindingFlags.Public);
                             if (defaultGenerator == null)
                             {
-                                throw new MissingMethodException($"Cannot find default generator method {ensure.GetDefault} for attribute {ensure.GetType().Name} in for member {caller.Name} in class {caller.DeclaringType.Name}.");
+                                throw new MissingMethodException($"Cannot find default generator method {ensure.GetDefault} for attribute {ensure.GetType().Name} in for member {caller.Name}{param} in class {caller.DeclaringType.Name}.");
                             }
 
                             if (callingObject != null)
@@ -72,48 +84,110 @@ namespace PoorMansRefinementTypes.Lib
                                 }
                             }
 
-                            return (T)defaultGenerator.Invoke(null, args); 
+                            a = (T)defaultGenerator.Invoke(null, args); 
                         }
                         else
                         {
-                            return default(T);
+                            a = default(T);
                         }
                         
                     }
                 }
+
+                // collect the parameters
+                if (ensure.ParameterName != null)
+                {
+                    ((SuperProxy)callingObject).parameters[ensure.ParameterName] = a;
+                }
+
+                // we cannot continue as new, default  value might impact further runs, so
+                // for now we quit on the first issue
+                if (!res)
+                {
+                    break; 
+                }
             }
 
+           
             return a; 
         }
 
-        public static int Validate(int a, object o = null)
+        public void SetUnguarded(object o)
         {
-            return HandleEnsureAttribute<int>(GetCallingMethodInfo(), a, o); 
+            foreach(var p in o.GetType().GetProperties())
+            {
+                parameters[p.Name] = p.GetValue(this); 
+            }
         }
 
-        public static string Validate(string s, object o = null)
+        public R CallMethod<R>(object nonProxyObject, params object[] args)
         {
-            return HandleEnsureAttribute<string>(GetCallingMethodInfo(), s, o);
+            return (R)CallMethod(nonProxyObject, args); 
         }
 
-        public static double Validate(double d, object o = null)
+
+        protected object CallMethod(object nonProxyObject, params object[] args)
         {
-            return HandleEnsureAttribute<double>(GetCallingMethodInfo(), d, o);
+            var m = GetCallingMethodInfo(1);
+
+            if (!(m is MethodBase))
+            {
+                // this cannot happen 
+            }
+
+            var method = (MethodBase)m; 
+
+            // get the *non* proxy version; this is very inefficient and you usually want to pass the actual object along anyway.
+            if (nonProxyObject == null)
+            {
+                var lookingFor = m.DeclaringType.Name.Replace("Proxy", "");
+                Type t = AppDomain.CurrentDomain.GetAssemblies().Select(a => a.DefinedTypes).SelectMany(a => a).First(a => a.Name == lookingFor); 
+                nonProxyObject = Activator.CreateInstance(t); 
+            }
+
+            // match up the parameters
+            var ps = method.GetParameters(); 
+            var finalArgs = new object[ps.Length];
+
+            var count = 0; 
+            foreach(var p in ps)
+            {
+                finalArgs[count] = parameters.ContainsKey(p.Name) ? parameters[p.Name] : args[count];
+                count++; 
+            }
+
+            // now we can invoke;
+            return nonProxyObject.GetType().GetMethod(m.Name).Invoke(nonProxyObject, finalArgs); 
         }
 
-        public static float Validate(float f, object o = null)
+        public static int Validate(int a, object o = null, string name = null)
         {
-            return HandleEnsureAttribute<float>(GetCallingMethodInfo(), f, o);
+            return HandleEnsureAttribute<int>(GetCallingMethodInfo(), a, o, name); 
         }
 
-        public static DateTime Validate(DateTime dt, object o = null)
+        public static string Validate(string s, object o = null, string name = null)
         {
-            return HandleEnsureAttribute<DateTime>(GetCallingMethodInfo(), dt, o);
+            return HandleEnsureAttribute<string>(GetCallingMethodInfo(), s, o, name);
         }
 
-        public static bool Validate(bool b, object o = null)
+        public static double Validate(double d, object o = null, string name = null)
         {
-            return HandleEnsureAttribute<bool>(GetCallingMethodInfo(), b, o);
+            return HandleEnsureAttribute<double>(GetCallingMethodInfo(), d, o, name);
+        }
+
+        public static float Validate(float f, object o = null, string name = null)
+        {
+            return HandleEnsureAttribute<float>(GetCallingMethodInfo(), f, o, name);
+        }
+
+        public static DateTime Validate(DateTime dt, object o = null, string name = null)
+        {
+            return HandleEnsureAttribute<DateTime>(GetCallingMethodInfo(), dt, o, name);
+        }
+
+        public static bool Validate(bool b, object o = null, string name = null)
+        {
+            return HandleEnsureAttribute<bool>(GetCallingMethodInfo(), b, o, name);
         }
     }
 }

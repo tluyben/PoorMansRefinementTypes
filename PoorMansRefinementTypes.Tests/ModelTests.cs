@@ -3,7 +3,7 @@ using PoorMansRefinementTypes.Lib;
 
 namespace PoorMansRefinementTypes.Tests
 {
-    public class Tests
+    public class ModelTests
     {
         [SetUp]
         public void Setup()
